@@ -144,7 +144,8 @@ export default function StationsPage() {
       return 'Non renseigné';
     }
 
-    // Regrouper par jour pour afficher un résumé simple
+    // Regrouper par jour en conservant l'ordre classique
+    const daysOrder = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
     const daysMap: Record<string, OpeningHour[]> = {};
     hours.forEach(h => {
       if (!daysMap[h.day]) daysMap[h.day] = [];
@@ -152,9 +153,11 @@ export default function StationsPage() {
     });
 
     const parts: string[] = [];
-    Object.entries(daysMap).forEach(([day, slots]) => {
+    daysOrder.forEach(day => {
+      const slots = daysMap[day] || [];
       const openSlots = slots.filter(s => s.isOpen !== false);
-      if (openSlots.length === 0) {
+
+      if (slots.length === 0 || openSlots.length === 0) {
         parts.push(`${day}: Fermé`);
       } else {
         const times = openSlots
@@ -164,6 +167,7 @@ export default function StationsPage() {
       }
     });
 
+    // Exemple: "Lundi: 08:00–12:30 / 15:00–18:30 | Mardi: Fermé | ..."
     return parts.join(' | ');
   };
 
@@ -713,53 +717,55 @@ export default function StationsPage() {
 
       {/* Modal */}
       {modalVisible && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 overflow-y-auto">
-          <div className="bg-white rounded-2xl shadow-xl max-w-4xl w-full my-8">
-            {/* Modal Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <h2 className="text-2xl font-bold text-gray-900">
-                {editingStation ? 'Modifier la station' : 'Nouvelle station'}
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 flex-shrink-0">
+              <h2 className="text-xl font-semibold text-gray-900">
+                {editingStation ? 'Modifier la station' : 'Créer une nouvelle station'}
               </h2>
               <button
                 onClick={handleCloseModal}
-                className="p-2 hover:bg-gray-100 rounded-lg transition"
+                className="p-2 rounded-full hover:bg-gray-100 text-gray-500 hover:text-gray-700"
               >
-                <X className="w-6 h-6 text-gray-600" />
+                <X className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Modal Body */}
-            <form onSubmit={handleSubmit} className="p-6 space-y-6">
-              {/* Informations générales */}
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Informations générales</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Nom de la station *
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-                      required
-                    />
+              <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="px-6 py-4 space-y-6 overflow-y-auto flex-1">
+              
+                {/* Informations générales */}
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Informations générales</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Nom de la station *
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.name}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Ville *
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.city}
+                        onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+                        required
+                      />
+                    </div>
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Ville *
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.city}
-                      onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-                      required
-                    />
-                  </div>
-
+              
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Adresse *
