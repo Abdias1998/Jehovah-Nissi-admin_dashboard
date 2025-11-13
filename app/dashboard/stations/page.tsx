@@ -53,6 +53,8 @@ export default function StationsPage() {
   const [editingStation, setEditingStation] = useState<Station | null>(null);
   const [userRole, setUserRole] = useState<string>('');
   const [managedStationId, setManagedStationId] = useState<string>('');
+  const [alwaysOpen, setAlwaysOpen] = useState(false);
+
   const [formData, setFormData] = useState({
     name: '',
     address: '',
@@ -798,7 +800,21 @@ export default function StationsPage() {
                         Horaires d'ouverture
                       </label>
 
-                      <div className="space-y-4">
+
+  {/* Option 24/24 7j/7 */}
+  <label className="flex items-center gap-2 mb-3 cursor-pointer">
+    <input
+      type="checkbox"
+      checked={alwaysOpen}
+      onChange={(e) => setAlwaysOpen(e.target.checked)}
+      className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
+    />
+    <span className="text-sm text-gray-700">
+      Ouvert 24h/24 – 7j/7
+    </span>
+  </label>
+
+                {!alwaysOpen && (      <div className="space-y-4">
                         {openingHoursForm.map((dayItem, dayIndex) => (
                           <div
                             key={dayItem.day}
@@ -904,6 +920,7 @@ export default function StationsPage() {
                           </div>
                         ))}
                       </div>
+                      )}
                     </div>
                   </div>
                 </div>
