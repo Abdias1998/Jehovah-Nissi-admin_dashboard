@@ -427,29 +427,45 @@ export default function StationsPage() {
     }
 
     // Construire openingHours pour le backend: plusieurs entrées par jour possibles
-    const openingHoursPayload: OpeningHour[] = [];
-    openingHoursForm.forEach(dayItem => {
-      if (dayItem.closed) {
-        // On peut soit ignorer, soit enregistrer explicitement comme fermé
-        openingHoursPayload.push({
-          day: dayItem.day,
-          open: '00:00',
-          close: '00:00',
-          isOpen: false,
-        });
-      } else {
-        dayItem.slots.forEach(slot => {
-          if (slot.open && slot.close) {
-            openingHoursPayload.push({
-              day: dayItem.day,
-              open: slot.open,
-              close: slot.close,
-              isOpen: true,
-            });
-          }
-        });
-      }
+  // Construire openingHours pour le backend
+const openingHoursPayload: OpeningHour[] = [];
+
+if (alwaysOpen) {
+  // Mode 24/24 – 7j/7 : on crée 7 entrées identiques
+  const daysOrder = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
+  daysOrder.forEach(day => {
+    openingHoursPayload.push({
+      day,
+      open: '00:00',
+      close: '23:59',
+      isOpen: true,
     });
+  });
+} else {
+  // Mode normal : par jour / créneau
+  openingHoursForm.forEach(dayItem => {
+    if (dayItem.closed) {
+      // Jour fermé
+      openingHoursPayload.push({
+        day: dayItem.day,
+        open: '00:00',
+        close: '00:00',
+        isOpen: false,
+      });
+    } else {
+      dayItem.slots.forEach(slot => {
+        if (slot.open && slot.close) {
+          openingHoursPayload.push({
+            day: dayItem.day,
+            open: slot.open,
+            close: slot.close,
+            isOpen: true,
+          });
+        }
+      });
+    }
+  });
+}
 
     const stationData = {
       name: formData.name,
