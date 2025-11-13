@@ -69,9 +69,42 @@ export default function StationsPage() {
     lpgAvailable: false,
     lpgPrice: '',
     services: [] as string[],
-    openingHours: '',
     isActive: true,
   });
+
+  const daysOfWeek = [
+    'Lundi',
+    'Mardi',
+    'Mercredi',
+    'Jeudi',
+    'Vendredi',
+    'Samedi',
+    'Dimanche',
+  ];
+
+  type DayOpeningSlot = {
+    open: string;
+    close: string;
+  };
+
+  type DayOpening = {
+    day: string;
+    closed: boolean;
+    slots: DayOpeningSlot[];
+  };
+
+  const [openingHoursForm, setOpeningHoursForm] = useState<DayOpening[]>(
+    daysOfWeek.map(day => ({
+      day,
+      closed: false,
+      slots: [
+        {
+          open: '08:00',
+          close: '18:00',
+        },
+      ],
+    })),
+  );
   const [selectedPhotos, setSelectedPhotos] = useState<File[]>([]);
   const [photoPreviewUrls, setPhotoPreviewUrls] = useState<string[]>([]);
 
@@ -110,9 +143,28 @@ export default function StationsPage() {
     if (!hours || hours.length === 0) {
       return 'Non renseigné';
     }
-    // Afficher simplement "24/7" ou les horaires du premier jour
-    const firstDay = hours[0];
-    return `${firstDay.open} - ${firstDay.close}`; 
+
+    // Regrouper par jour pour afficher un résumé simple
+    const daysMap: Record<string, OpeningHour[]> = {};
+    hours.forEach(h => {
+      if (!daysMap[h.day]) daysMap[h.day] = [];
+      daysMap[h.day].push(h);
+    });
+
+    const parts: string[] = [];
+    Object.entries(daysMap).forEach(([day, slots]) => {
+      const openSlots = slots.filter(s => s.isOpen !== false);
+      if (openSlots.length === 0) {
+        parts.push(`${day}: Fermé`);
+      } else {
+        const times = openSlots
+          .map(s => `${s.open}–${s.close}`)
+          .join(' / ');
+        parts.push(`${day}: ${times}`);
+      }
+    });
+
+    return parts.join(' | ');
   };
 
   const getFuelByType = (fuelPrices: FuelPrice[], type: string) => {
@@ -209,7 +261,7 @@ export default function StationsPage() {
       const diesel = getFuelByType(station.fuelPrices, 'diesel');
       const premium = getFuelByType(station.fuelPrices, 'premium');
       const lpg = getFuelByType(station.fuelPrices, 'lpg');
-      
+
       setFormData({
         name: station.name,
         address: station.address,
@@ -226,9 +278,43 @@ export default function StationsPage() {
         lpgAvailable: lpg?.available || false,
         lpgPrice: lpg?.price?.toString() || '',
         services: station.services || [],
-        openingHours: formatOpeningHours(station.openingHours),
         isActive: station.status === 'open',
       });
+
+      // Mapper les horaires existants vers openingHoursForm
+      const byDay: Record<string, OpeningHour[]> = {};
+      (station.openingHours || []).forEach(h => {
+        if (!byDay[h.day]) byDay[h.day] = [];
+        byDay[h.day].push(h);
+      });
+
+      setOpeningHoursForm(
+        daysOfWeek.map(day => {
+          const slots = byDay[day] || [];
+          if (slots.length === 0) {
+            return {
+              day,
+              closed: true,
+              slots: [],
+            } as DayOpening;
+          }
+
+          const openSlots = slots.filter(s => s.isOpen !== false);
+          if (openSlots.length === 0) {
+            return {
+              day,
+              closed: true,
+              slots: [],
+            } as DayOpening;
+          }
+
+          return {
+            day,
+            closed: false,
+            slots: openSlots.map(s => ({ open: s.open, close: s.close })),
+          } as DayOpening;
+        }),
+      );
     } else {
       setEditingStation(null);
       setFormData({
@@ -247,9 +333,29 @@ export default function StationsPage() {
         lpgAvailable: false,
         lpgPrice: '',
         services: [],
-        openingHours: '24/7',
         isActive: true,
       });
+
+      // Réinitialiser les horaires par défaut
+      setOpeningHoursForm(
+        daysOfWeek.map(day => ({
+          day,
+          closed: day === 'Samedi' || day === 'Dimanche',
+          slots:
+            day === 'Samedi' || day === 'Dimanche'
+              ? []
+              : [
+                  {
+                    open: '08:00',
+                    close: '12:30',
+                  },
+                  {
+                    open: '15:00',
+                    close: '18:30',
+                  },
+                ],
+        })),
+      );
     }
     setModalVisible(true);
   };
@@ -314,6 +420,31 @@ export default function StationsPage() {
       fuelPrices.push({ type: 'lpg', price: parseFloat(formData.lpgPrice), available: true });
     }
 
+    // Construire openingHours pour le backend: plusieurs entrées par jour possibles
+    const openingHoursPayload: OpeningHour[] = [];
+    openingHoursForm.forEach(dayItem => {
+      if (dayItem.closed) {
+        // On peut soit ignorer, soit enregistrer explicitement comme fermé
+        openingHoursPayload.push({
+          day: dayItem.day,
+          open: '00:00',
+          close: '00:00',
+          isOpen: false,
+        });
+      } else {
+        dayItem.slots.forEach(slot => {
+          if (slot.open && slot.close) {
+            openingHoursPayload.push({
+              day: dayItem.day,
+              open: slot.open,
+              close: slot.close,
+              isOpen: true,
+            });
+          }
+        });
+      }
+    });
+
     const stationData = {
       name: formData.name,
       address: formData.address,
@@ -323,7 +454,7 @@ export default function StationsPage() {
       longitude: parseFloat(formData.longitude),
       latitude: parseFloat(formData.latitude),
       fuelPrices,
-      openingHours: [], // Simplifié pour l'instant
+      openingHours: openingHoursPayload,
       status: formData.isActive ? 'open' : 'closed',
       services: formData.services,
     };
@@ -657,15 +788,115 @@ export default function StationsPage() {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Horaires
+                      Horaires d'ouverture
                     </label>
-                    <input
-                      type="text"
-                      value={formData.openingHours}
-                      onChange={(e) => setFormData({ ...formData, openingHours: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-                      placeholder="Ex: 24/7 ou Lun-Ven 8h-18h"
-                    />
+
+                    <div className="space-y-4">
+                      {openingHoursForm.map((dayItem, dayIndex) => (
+                        <div
+                          key={dayItem.day}
+                          className="border border-gray-200 rounded-lg p-3"
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="font-medium text-gray-800">{dayItem.day}</span>
+                            <label className="flex items-center text-sm text-gray-600">
+                              <input
+                                type="checkbox"
+                                checked={dayItem.closed}
+                                onChange={(e) => {
+                                  const updated = [...openingHoursForm];
+                                  updated[dayIndex] = {
+                                    ...updated[dayIndex],
+                                    closed: e.target.checked,
+                                    slots: e.target.checked
+                                      ? []
+                                      : (updated[dayIndex].slots.length
+                                          ? updated[dayIndex].slots
+                                          : [
+                                              { open: '08:00', close: '12:30' },
+                                              { open: '15:00', close: '18:30' },
+                                            ]),
+                                  };
+                                  setOpeningHoursForm(updated);
+                                }}
+                                className="mr-2"
+                              />
+                              Fermé
+                            </label>
+                          </div>
+
+                          {!dayItem.closed && (
+                            <div className="space-y-2">
+                              {dayItem.slots.map((slot, slotIndex) => (
+                                <div key={slotIndex} className="flex items-center space-x-2">
+                                  <input
+                                    type="time"
+                                    value={slot.open}
+                                    onChange={(e) => {
+                                      const updated = [...openingHoursForm];
+                                      updated[dayIndex].slots[slotIndex] = {
+                                        ...updated[dayIndex].slots[slotIndex],
+                                        open: e.target.value,
+                                      };
+                                      setOpeningHoursForm(updated);
+                                    }}
+                                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+                                  />
+                                  <span className="text-gray-500">–</span>
+                                  <input
+                                    type="time"
+                                    value={slot.close}
+                                    onChange={(e) => {
+                                      const updated = [...openingHoursForm];
+                                      updated[dayIndex].slots[slotIndex] = {
+                                        ...updated[dayIndex].slots[slotIndex],
+                                        close: e.target.value,
+                                      };
+                                      setOpeningHoursForm(updated);
+                                    }}
+                                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+                                  />
+                                  {dayItem.slots.length > 1 && (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        const updated = [...openingHoursForm];
+                                        updated[dayIndex] = {
+                                          ...updated[dayIndex],
+                                          slots: updated[dayIndex].slots.filter((_, i) => i !== slotIndex),
+                                        };
+                                        setOpeningHoursForm(updated);
+                                      }}
+                                      className="px-2 py-1 text-xs text-red-600 border border-red-200 rounded"
+                                    >
+                                      Suppr.
+                                    </button>
+                                  )}
+                                </div>
+                              ))}
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const updated = [...openingHoursForm];
+                                  updated[dayIndex] = {
+                                    ...updated[dayIndex],
+                                    slots: [
+                                      ...updated[dayIndex].slots,
+                                      { open: '15:00', close: '18:30' },
+                                    ],
+                                  };
+                                  setOpeningHoursForm(updated);
+                                }}
+                                className="mt-1 text-xs text-primary hover:underline"
+                              >
+                                + Ajouter un créneau
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>
