@@ -11,7 +11,8 @@ import {
   CreditCard,
   LogOut,
   Shield,
-  DollarSign
+  DollarSign,
+  Car
 } from 'lucide-react';
 import { api } from '@/lib/api';
 
@@ -23,6 +24,7 @@ const menuItems = [
   { href: '/dashboard/reservations', label: 'Réservations', icon: Calendar, roles: ['admin', 'gestion'] },
   { href: '/dashboard/transactions', label: 'Transactions', icon: CreditCard, roles: ['admin', 'gestion'] },
   { href: '/dashboard/refund', label: 'Remboursement', icon: DollarSign, roles: ['admin', 'gestion'] },
+  { href: '/dashboard/oem', label: 'Véhicules OEM', icon: Car, roles: ['admin'] },
 ];
 
 export default function Sidebar({ userRole }: { userRole: string }) {
