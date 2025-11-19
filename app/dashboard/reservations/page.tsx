@@ -141,9 +141,9 @@ export default function ReservationsPage() {
       filtered = filtered.filter(
         (res) =>
           res.reference.toLowerCase().includes(query) ||
-          res.userId.firstName.toLowerCase().includes(query) ||
-          res.userId.lastName.toLowerCase().includes(query) ||
-          res.userId.email.toLowerCase().includes(query) ||
+          ((res.userId?.firstName || '').toLowerCase().includes(query)) ||
+          ((res.userId?.lastName || '').toLowerCase().includes(query)) ||
+          ((res.userId?.email || '').toLowerCase().includes(query)) ||
           res.stationId.name.toLowerCase().includes(query)
       );
     }
@@ -374,13 +374,13 @@ export default function ReservationsPage() {
                     <td className="px-6 py-4">
                       <div>
                         <p className="font-medium text-gray-900">
-                          {reservation.userId.firstName} {reservation.userId.lastName}
+                          {(reservation.userId?.firstName || '-') + ' ' + (reservation.userId?.lastName || '')}
                         </p>
-                        <p className="text-sm text-gray-500">{reservation.userId.email}</p>
-                        {reservation.userId.phoneNumber && (
+                        <p className="text-sm text-gray-500">{reservation.userId?.email || '-'}</p>
+                        {reservation.userId?.phoneNumber && (
                           <p className="text-sm text-gray-500 flex items-center gap-1 mt-1">
                             <Phone className="w-3 h-3" />
-                            {reservation.userId.phoneNumber}
+                            {reservation.userId?.phoneNumber}
                           </p>
                         )}
                       </div>
@@ -522,13 +522,13 @@ export default function ReservationsPage() {
                 <label className="text-sm font-medium text-gray-500">Client</label>
                 <div className="mt-1">
                   <p className="text-lg font-semibold text-gray-900">
-                    {selectedReservation.userId.firstName} {selectedReservation.userId.lastName}
+                    {(selectedReservation.userId?.firstName || '-') + ' ' + (selectedReservation.userId?.lastName || '')}
                   </p>
-                  <p className="text-sm text-gray-600">{selectedReservation.userId.email}</p>
-                  {selectedReservation.userId.phoneNumber && (
+                  <p className="text-sm text-gray-600">{selectedReservation.userId?.email || '-'}</p>
+                  {selectedReservation.userId?.phoneNumber && (
                     <p className="text-sm text-gray-600 flex items-center gap-1 mt-1">
                       <Phone className="w-4 h-4" />
-                      {selectedReservation.userId.phoneNumber}
+                      {selectedReservation.userId?.phoneNumber}
                     </p>
                   )}
                 </div>
