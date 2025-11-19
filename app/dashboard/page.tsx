@@ -29,18 +29,19 @@ export default function DashboardPage() {
     try {
       setLoading(true);
       
-      // Charger les statistiques en parallèle
-      const [users, kycRequests, stations] = await Promise.all([
+      // Charger les statistiques en parallèle (inclut réservations)
+      const [users, kycRequests, stations, reservations] = await Promise.all([
         api.users.getAll(),
         api.kyc.getAll(),
         api.stations.getAll(),
+        api.reservations.getAll(),
       ]);
 
       setStats({
         users: users.length,
         kycPending: kycRequests.filter((k: any) => k.status === 'pending').length,
         stations: stations.length,
-        reservations: 0, // TODO: Ajouter l'API des réservations
+        reservations: (reservations || []).length,
       });
     } catch (error) {
       console.error('Erreur chargement stats:', error);
