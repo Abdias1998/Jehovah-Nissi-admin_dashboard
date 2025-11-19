@@ -85,9 +85,9 @@ export default function TransactionsPage() {
       filtered = filtered.filter(
         (txn) =>
           txn.reference.toLowerCase().includes(query) ||
-          txn.userId.firstName.toLowerCase().includes(query) ||
-          txn.userId.lastName.toLowerCase().includes(query) ||
-          txn.userId.email.toLowerCase().includes(query) ||
+          ((txn.userId?.firstName || '').toLowerCase().includes(query)) ||
+          ((txn.userId?.lastName || '').toLowerCase().includes(query)) ||
+          ((txn.userId?.email || '').toLowerCase().includes(query)) ||
           txn.phoneNumber?.toLowerCase().includes(query) ||
           txn.feexpayReference?.toLowerCase().includes(query)
       );
@@ -350,9 +350,9 @@ const formatDate = (dateString: string) => {
                     <td className="px-6 py-4">
                       <div>
                         <p className="font-medium text-gray-900">
-                          {transaction.userId.firstName} {transaction.userId.lastName}
+                          {(transaction.userId?.firstName || '-') + ' ' + (transaction.userId?.lastName || '')}
                         </p>
-                        <p className="text-sm text-gray-500">{transaction.userId.email}</p>
+                        <p className="text-sm text-gray-500">{transaction.userId?.email || '-'}</p>
                         {transaction.phoneNumber && (
                           <p className="text-sm text-gray-500 flex items-center gap-1 mt-1">
                             <Phone className="w-3 h-3" />
