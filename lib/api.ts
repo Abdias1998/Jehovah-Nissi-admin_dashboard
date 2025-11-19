@@ -83,6 +83,7 @@ export interface Transaction {
   status: 'PENDING' | 'SUCCESSFUL' | 'FAILED' | 'CANCELLED';
   feexpayReference?: string;
   errorMessage?: string;
+  reason?: string;
   description?: string;
   metadata?: any;
   completedAt?: string;
@@ -240,6 +241,10 @@ export const api = {
       if (limit) params.append('limit', limit.toString());
       if (params.toString()) url += `?${params.toString()}`;
       const response = await apiClient.get(url);
+      return response.data;
+    },
+    getById: async (id: string): Promise<Transaction> => {
+      const response = await apiClient.get(`/payments/admin/transactions/${id}`);
       return response.data;
     },
     getStats: async () => {

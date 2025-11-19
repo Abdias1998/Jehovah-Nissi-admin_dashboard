@@ -4,8 +4,11 @@ import { useEffect, useState } from 'react';
 import { api, Transaction } from '@/lib/api';
 import { Search, DollarSign, TrendingUp, TrendingDown, RefreshCw, Calendar, User, Phone, CreditCard, CheckCircle, Clock, XCircle, AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react';
 import AlertDialog from '@/components/AlertDialog';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 export default function TransactionsPage() {
+  const router = useRouter();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [filteredTransactions, setFilteredTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
@@ -149,16 +152,27 @@ export default function TransactionsPage() {
     return provider ? labels[provider] || provider.toUpperCase() : '-';
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffTime = Math.abs(now.getTime() - date.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+const formatDate = (dateString: string) => {
+  const date = new Date(dateString);
+  const formatter = new Intl.DateTimeFormat('fr-FR', {
+    timeZone: 'Africa/Porto-Novo',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  });
+  const parts = formatter.formatToParts(date);
+  const get = (type: string) => parts.find(p => p.type === type)?.value || '';
+  const dd = get('day');
+  const mm = get('month');
+  const yyyy = get('year');
+  const HH = get('hour');
+  const MM = get('minute');
+  return `${dd}/${mm}/${yyyy} ${HH}:${MM}`;
+};
 
-    if (diffDays === 0) return `Aujourd'hui à ${date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`;
-    if (diffDays === 1) return `Hier à ${date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`;
-    return date.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-  };
 
   return (
     <div className="p-8">
@@ -325,7 +339,10 @@ export default function TransactionsPage() {
                 {paginatedTransactions.map((transaction) => (
                   <tr key={transaction._id} className="hover:bg-gray-50 transition">
                     <td className="px-6 py-4">
-                      <p className="font-mono text-sm font-medium text-gray-900">{transaction.reference}</p>
+                      <Link href={`/dashboard/transactions/${transaction._id}`} className="font-mono text-sm font-medium text-primary hover:underline cursor-pointer"
+                        onClick={(e) => { e.preventDefault(); router.push(`/dashboard/transactions/${transaction._id}`); }}>
+                        {transaction.reference}
+                      </Link>
                       {transaction.feexpayReference && (
                         <p className="text-xs text-gray-500 mt-1">Feexpay: {transaction.feexpayReference}</p>
                       )}
@@ -362,6 +379,9 @@ export default function TransactionsPage() {
                         <Calendar className="w-4 h-4" />
                         <span>{formatDate(transaction.createdAt)}</span>
                       </div>
+                      {transaction.status === 'FAILED' && transaction.reason && (
+                        <p className="text-xs text-red-600 mt-1">Raison: {transaction.reason}</p>
+                      )}
                       {transaction.errorMessage && (
                         <p className="text-xs text-red-500 mt-1">{transaction.errorMessage}</p>
                       )}
