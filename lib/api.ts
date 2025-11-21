@@ -263,6 +263,22 @@ export const api = {
       return { data: response.data, error: null };
     },
   },
+
+  // Notifications
+  notifications: {
+    send: async (userId: string, payload: { title: string; message: string; type: 'info' | 'success' | 'warning' | 'error' | 'marketing'; data?: any }) => {
+      const response = await apiClient.post('/notifications/send', { userId, payload });
+      return response.data;
+    },
+    sendBulk: async (userIds: string[], payload: { title: string; message: string; type: 'info' | 'success' | 'warning' | 'error' | 'marketing'; data?: any }) => {
+      const response = await apiClient.post('/notifications/send-bulk', { userIds, payload });
+      return response.data;
+    },
+    marketingCampaign: async (payload: { title: string; message: string; type?: 'marketing'; data?: any }) => {
+      const response = await apiClient.post('/notifications/marketing-campaign', { ...payload, type: 'marketing' });
+      return response.data;
+    },
+  },
 };
 
 export default api;

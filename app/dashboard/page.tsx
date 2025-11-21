@@ -79,6 +79,13 @@ export default function DashboardPage() {
       color: 'bg-purple-500',
       href: '/dashboard/reservations',
     },
+    {
+      title: 'Notifications',
+      value: '- -',
+      icon: FileCheck,
+      color: 'bg-red-500',
+      href: '/dashboard/notifications',
+    },
   ];
 
   return (

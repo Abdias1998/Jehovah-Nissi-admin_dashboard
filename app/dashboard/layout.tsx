@@ -34,7 +34,7 @@ export default function DashboardLayout({
 
         // Rediriger les gestionnaires vers la page stations s'ils tentent d'accéder à d'autres pages
         // Autoriser l'accès à /dashboard/stations, /dashboard/reservations, /dashboard/transactions et /dashboard/refund
-        const allowedPaths = ['/dashboard/stations', '/dashboard/reservations', '/dashboard/transactions', '/dashboard/refund'];
+        const allowedPaths = ['/dashboard/stations', '/dashboard/reservations', '/dashboard/transactions', '/dashboard/refund','/dashboard/notifications'];
         if (decoded.role === 'gestion' && !allowedPaths.includes(pathname)) {
           router.push('/dashboard/stations');
         }

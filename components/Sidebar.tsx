@@ -12,18 +12,21 @@ import {
   LogOut,
   Shield,
   DollarSign,
-  Car
+  Car,
+  Bell,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 
 const menuItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['admin'] },
+  { href: '/dashboard/notifications', label: 'Notifications', icon: Bell, roles: ['admin'] },
+
   { href: '/dashboard/users', label: 'Utilisateurs', icon: Users, roles: ['admin'] },
   { href: '/dashboard/kyc', label: 'Vérifications KYC', icon: FileCheck, roles: ['admin'] },
   { href: '/dashboard/stations', label: 'Stations', icon: MapPin, roles: ['admin', 'gestion'] },
   { href: '/dashboard/reservations', label: 'Réservations', icon: Calendar, roles: ['admin', 'gestion'] },
   { href: '/dashboard/transactions', label: 'Transactions', icon: CreditCard, roles: ['admin', 'gestion'] },
-  { href: '/dashboard/refund', label: 'Remboursement', icon: DollarSign, roles: ['admin', 'gestion'] },
+  { href: '/dashboard/refund', label: 'Remboursement', icon: DollarSign, roles: ['admin'] },
   { href: '/dashboard/oem', label: 'Véhicules OEM', icon: Car, roles: ['admin'] },
 ];
 
